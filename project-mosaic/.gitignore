@@ -1,0 +1,14 @@
+tiles
+mosaic-*
+base.jpg
+__pycache__
+**/
+*/
+*
+!DISCOVERY.py
+!instagram.py
+!mosaic-web.jpg
+!mosaic.ipynb
+!sample-50x.png
+!sample.png
+!.gitignore
