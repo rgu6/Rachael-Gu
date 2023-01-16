@@ -1,0 +1,103 @@
+---
+title: "IS 445 Final Project Data Visualizations"
+author: "Rachael Gu"
+date: "2023-01-08"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+Link to Data Set: https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who
+
+```{r}
+setwd("C:/Users/Rachael/Desktop/IS 445")
+data <- read.csv(file="Life Expectancy Data.csv", header=TRUE, sep=",")
+
+## clean data 
+
+# replace blanks with NA
+data[data == "" | data == " "] <- NA
+
+# delete any rows containing missing data
+data <- na.omit(data)
+
+head(data)
+```
+**Stepwise Regression**
+The final model includes Country, Year, HIV.AIDS, Schooling, thinness.5.9.years, Alcohol, Hepatitis.B, Income.composition.of.resources, under.five.deaths, and infant.deaths
+```{r}
+library(alr4)
+
+step(object=lm(Life.expectancy ~ 1, data=data), scope= ~ Country + Year + Status + Adult.Mortality + infant.deaths + Alcohol + percentage.expenditure + Hepatitis.B + Measles + BMI + under.five.deaths + Polio + Total.expenditure + Diphtheria + HIV.AIDS + GDP + Population + thinness..1.19.years + thinness.5.9.years + Income.composition.of.resources + Schooling, direction="both")
+```
+
+The data story message is directed to all types of audience, both technical and non-technical. With the data visualization, readers will be able to see the change in life expectancy for the countries in the data set from 2000-2015. Huge developments in healthcare were made during this period which resulted in a longer life expectancy as seen in the graph. In 2000, most countries had a life expectancy of 70-75 years. However, in 2015, it can be seen that a lot of countries' life expectancy increased and were mostly 75-80 years. Researchers have been studying how to effectively increase life expectancy and which factors were the most influential. This visualization can be used to look at overall trends in life expectancy and make predictions on future changes. 
+```{r}
+data <- read.csv(file="Life Expectancy Data.csv", header=TRUE, sep=",")
+
+library(ggplot2)
+suppressWarnings({
+p <- ggplot(data, aes(x = Life.expectancy)) +
+  geom_histogram(fill = "cornflowerblue",
+                 color = "white",
+                 bins = 10) +
+  facet_wrap(~Year) +
+  labs(title = "Countries by Life Expectancy in Years",
+       subtitle = "number of bins = 10",
+       caption = "Figure 1: Histogram",
+       x = "Life Expectancy (Years)",
+       y = "Number of Countries")
+p
+})
+```
+
+The data story message is directed to all types of audience, both technical and non-technical. With the data visualization, readers will be able to see the correlations between life expectancy and different variables. Studies have shown that countries with higher levels of inequality, such as with income, education, and health, are the least efficient in their healthcare system. This graph compares life expectancy with factors that are related to immunizations, schooling, and economics. From this chart, it can be seen that there is a relatively strong positive correlation between life expectancy and schooling. There is some correlation between GDP and life expectancy (0.441) which indicates that both variables move in tandem. In other words, if GDP increases, life expectancy may also increase. HIV/AIDS and life expectancy have a negative correlation of -0.592 which means the variables move in opposite directions. This is expected because countries with lower HIV/AIDS cases tend to have a better healthcare system and longer life expectancy. Researchers have been studying how to effectively increase life expectancy and translate that into policies. This visualizations can be used to determine which factors are the most effective with improving life expectancy. In the future, policymakers may want to put more effort in increasing education opportunities to increase average life expectancy. 
+```{r}
+library(GGally)
+
+# prepare data
+library(dplyr)
+suppressWarnings({
+df <- data %>%
+  mutate(gdp = as.numeric(GDP),
+         measles = as.numeric(Measles)) %>%
+  select(Life.expectancy, gdp, measles, HIV.AIDS, Schooling)
+
+# create scatterplot matrix
+ggpairs(df) +
+  labs(title = "Correlation Between Life Expectancy (Years), GDP, Measles, HIV/AIDS, Schooling",
+       caption = "Figure 3: Scatterplot Matrix")
+})
+```
+
+The data story message is directed to all types of audience, both technical and non-technical. With the data visualization, readers will be able to compare the life expectancy for different countries based on population and status for 2015. Although life expectancy has increased in both developing and developed countries, it can be seen that there are global health disparities. There are still large variations in life expectancy between countries based on status. From the chart, it can be seen that all developed countries in 2015 had a life expectancy that was longer than the average of all 193 countries in the data set. Researchers have been studying global health disparities between countries based on socio-economic development. This visualization can be used to analyze how much variation there is in life expectancy for developed and developing countries. In the future, policymakers may want to put more effort in improving life expectancy for countries that are below the dashed line to close the gap in life expectancy between developed and developing countries.
+```{r}
+# filter through data with the year 2015
+mydf <- filter(data, Year == "2015")
+
+# select columns 
+newdata <- select(mydf, Status, Life.expectancy, Population)
+head(newdata)
+
+# add annotation line and text label
+suppressWarnings({
+mean_life_expectancy <- mean(newdata$Life.expectancy)
+
+ggplot(newdata,
+       aes(x = log(as.numeric(Population)), y = as.numeric(Life.expectancy), color = factor(Status))) +
+  geom_point(size = 3) +
+  geom_hline(yintercept = mean_life_expectancy,
+             color = "darkred",
+             linetype = "dashed") +
+  ggplot2::annotate("text",
+                    9.5,
+                    mean_life_expectancy - 1,
+                    label = "Mean Life Expectancy",
+                    color = "darkred") +
+  labs(title = "Life Expectancy by Population and Status for 2015",
+       caption = "Figure 2: Graph with line annotation",
+       x = "Log Population",
+       y = "Life Expectancy in Years",
+       color = "Status")
+})
+```
