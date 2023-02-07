@@ -1,0 +1,97 @@
+---
+title: "Fetch Activity Exercise"
+author: "Rachael Gu"
+date: "2023-02-06"
+output: html_document
+---
+
+```{r}
+setwd("C:/Users/Rachael/Desktop/Internship Tests")
+receipts <- read.csv(file="data_daily.csv", header=TRUE, sep=",")
+head(receipts)
+```
+
+**Method 1:**
+```{r}
+model_1 <- lm(Receipt_Count ~ factor(month) + factor(Day), data=receipts)
+summary(model_1)
+```
+The lambda value that was selected by the Box-Cox procedure is 0.6 which corresponds to a simple transformation of sqrt(y).
+```{r}
+library(MASS)
+boxcox(model_1)
+bc <- boxcox(model_1, plotit=FALSE)
+bc$x[which.max(bc$y)]
+```
+```{r}
+model1_refit <- lm(sqrt(Receipt_Count) ~ factor(month) + factor(Day), data=receipts)
+summary(model1_refit)
+
+# diagnostic plots for model_1
+par(mfrow=c(2,2))
+plot(model_1, add.smooth=FALSE)
+
+# diagnostic plots for simple transformation model
+par(mfrow=c(2,2))
+plot(model1_refit, add.smooth=FALSE)
+```
+
+**Method 2:** Forward Selection
+```{r}
+# criteria: add variables until F_in for all the remaining variables is less than 3
+library(alr4)
+model_2 <- lm(Receipt_Count ~ 1, data=receipts)
+indep.vars <- ~ factor(month) + factor(Day)
+
+add1(model_2, indep.vars, test="F")
+```
+```{r}
+model_2 <- update(model_2, . ~ . + factor(month)) #month has the biggest F
+add1(model_2, indep.vars, test="F")
+```
+The independent variable in the final model using forward selection is month.
+
+**Method 3:** Backward Selection
+```{r}
+# criteria: delete variables until F_out for all the remaining variables is more than 3
+model_3 <- lm(Receipt_Count ~ factor(month) + factor(Day), data=receipts)
+drop1(model_3, test="F")
+```
+```{r}
+model_3 <- update(model_3, . ~ . - factor(Day)) #Day has the least F
+drop1(model_3, test="F")
+```
+The independent variable in the final model using backward selection is month.
+
+**Method 4:** Stepwise Regression
+```{r}
+step(object=lm(Receipt_Count ~ 1, data=receipts), scope = ~ factor(month) + factor(Day), direction="both")
+```
+The independent variables in the final model using stepwise regression are month and Day.
+
+**Method 5:** All Subset Regression
+```{r}
+library(leaps)
+model_5 <- regsubsets(Receipt_Count ~ factor(month) + factor(Day), data=receipts, nbest=1, nvmax=2)
+summary(model_5)
+```
+```{r}
+plot(1:2, summary(model_5)$cp, xlab="p-prime", ylab="Cp")
+abline(0,1)
+summary(model_5)$cp
+```
+```{r}
+summary(model_5)$outmat[2,]
+```
+The second model has the minimum Mallow's Cp and includes month. From the output, November and December are significant as denoted by the asterisks in the table above which corresponds to the holiday shopping season.
+
+**User Interaction App**
+```{r}
+m <- readline(prompt = "Enter month (capitalize first letter and full spelling): ")
+d <- readline(prompt = "Enter day (integer values only): ")
+
+df <- data.frame(month=m, Day=d)
+prediction <- predict(model1_refit, df, interval="prediction")
+print(prediction**2)
+```
+
